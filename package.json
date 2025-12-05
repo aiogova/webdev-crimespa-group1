@@ -3,12 +3,15 @@
     "description": "St Paul Crime Single Page Application",
     "version": "1.0.0",
     "author": {
-        "name": "",
-        "email": ""
+        "name": "Anastasia Iogova",
+        "email": "aiogova77@gmail.com"
     },
     "contributors": [
+        "Martin Miller",
+        "Emmanuel Adekoya",
+        "Anastasia Iogova"
     ],
-    "repository": {},
+    "repository": {"url": "https://github.com/aiogova/webdev-crimespa-group1"},
     "type": "module",
     "engines": {
         "node": "^20.19.0 || >=22.12.0"
