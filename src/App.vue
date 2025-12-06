@@ -135,7 +135,7 @@ function findLocation() {
         if (lng < map.bounds.nw.lng) lng = map.bounds.nw.lng;
         if (lng > map.bounds.se.lng) lng = map.bounds.se.lng;
 
-        map.leaflet.setView([lat, lng], map.zoom);
+        map.leaflet.setView([lat, lng], 16);
     } else {
         // Use Nominatim API to convert address to lat/long
         fetch(`https://nominatim.openstreetmap.org/search?q=${loc_input}&format=json&viewbox=${map.bounds.nw.lng},${map.bounds.nw.lat},${map.bounds.se.lng},${map.bounds.se.lat}&bounded=1`)
@@ -144,7 +144,7 @@ function findLocation() {
             if (data.length > 0) {
                 let lat = parseFloat(data[0].lat);
                 let lng = parseFloat(data[0].lon);
-                map.leaflet.setView([lat, lng], map.zoom);
+                map.leaflet.setView([lat, lng], 16);
             } else {
                 location_err.value = true;
             }
