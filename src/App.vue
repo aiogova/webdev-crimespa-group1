@@ -66,6 +66,28 @@ onMounted(() => {
     .catch((error) => {
         console.log('Error:', error);
     });
+
+    // Update location input on map movement
+    map.leaflet.on('moveend', () => {
+        let center = map.leaflet.getCenter();
+        let lat = center.lat;
+        let lng = center.lng;
+
+        // Use Nominatim reverse geocoding to get address
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.display_name) {
+                location.value = data.display_name;
+            } else {
+                location.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching address:', error);
+            location.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        });
+    });
 });
 
 
@@ -89,6 +111,50 @@ function closeDialog() {
         dialog_err.value = true;
     }
 }
+
+// Function called when user pressed 'GO' on location dialog box
+function findLocation() {
+    let loc_input = location.value;
+    if (loc_input === '') {
+        location_err.value = true;
+        return;
+    }
+    location_err.value = false;
+
+    // Check if input is lat/long coordinates
+    let latLongRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+    let match = loc_input.match(latLongRegex);
+
+    if (match) {
+        let lat = parseFloat(match[1]);
+        let lng = parseFloat(match[3]);
+
+        // Clamp values if outside St. Paul's bounding box
+        if (lat > map.bounds.nw.lat) lat = map.bounds.nw.lat;
+        if (lat < map.bounds.se.lat) lat = map.bounds.se.lat;
+        if (lng < map.bounds.nw.lng) lng = map.bounds.nw.lng;
+        if (lng > map.bounds.se.lng) lng = map.bounds.se.lng;
+
+        map.leaflet.setView([lat, lng], map.zoom);
+    } else {
+        // Use Nominatim API to convert address to lat/long
+        fetch(`https://nominatim.openstreetmap.org/search?q=${loc_input}&format=json&viewbox=${map.bounds.nw.lng},${map.bounds.nw.lat},${map.bounds.se.lng},${map.bounds.se.lat}&bounded=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                let lat = parseFloat(data[0].lat);
+                let lng = parseFloat(data[0].lon);
+                map.leaflet.setView([lat, lng], map.zoom);
+            } else {
+                location_err.value = true;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching location:', error);
+            location_err.value = true;
+        });
+    }
+}
 </script>
 
 <template>
@@ -105,14 +171,12 @@ function closeDialog() {
             <div id="leafletmap" class="cell auto"></div>
         </div>
     </div>
-    <dialog id="rest-dialog" open>
-        <h1 class="dialog-header">Find Location</h1>
-        <label class="dialog-label">Coordinates or Address: </label>
-        <input id="dialog-url" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
-        <p class="dialog-error" v-if="location_err">Error: must enter a valid coordinates or address</p>
-        <br/>
-        <button class="button" type="button" @click="closeDialog">GO</button>
-    </dialog>
+    <h1 class="dialog-header">Find Location</h1>
+    <label class="dialog-label">Coordinates or Address: </label>
+    <input id="dialog-loc" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
+    <p class="dialog-error" v-if="location_err">Error: Location not found. Must enter a valid coordinates or address.</p>
+    <br/>
+    <button class="button" type="button" @click="findLocation">GO</button>
 </template>
 
 <style scoped>
