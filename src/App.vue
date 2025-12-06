@@ -2,7 +2,9 @@
 import { reactive, ref, onMounted } from 'vue'
 
 let crime_url = ref('');
+let location = ref('');
 let dialog_err = ref(false);
+let location_err = ref(false);
 let map = reactive(
     {
         leaflet: null,
@@ -103,6 +105,14 @@ function closeDialog() {
             <div id="leafletmap" class="cell auto"></div>
         </div>
     </div>
+    <dialog id="rest-dialog" open>
+        <h1 class="dialog-header">Find Location</h1>
+        <label class="dialog-label">Coordinates or Address: </label>
+        <input id="dialog-url" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
+        <p class="dialog-error" v-if="location_err">Error: must enter a valid coordinates or address</p>
+        <br/>
+        <button class="button" type="button" @click="closeDialog">GO</button>
+    </dialog>
 </template>
 
 <style scoped>
