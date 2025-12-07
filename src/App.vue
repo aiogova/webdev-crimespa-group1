@@ -5,6 +5,13 @@ let crime_url = ref('');
 let location = ref('');
 let dialog_err = ref(false);
 let location_err = ref(false);
+
+let crimes = ref([]);                // full list of crimes from API
+let visible_crimes = ref([]);        // crimes filtered by map bounds
+let neighborhood_counts = reactive({}); // { neighborhood_name: count }
+let neighborhoods = ref([]);
+let codes = ref([]);
+
 let map = reactive(
     {
         leaflet: null,
@@ -96,6 +103,51 @@ onMounted(() => {
 function initializeCrimes() {
     // TODO: get code and neighborhood data
     //       get initial 1000 crimes
+
+     // 1. Fetch neighborhoods
+    fetch(crime_url.value + '/neighborhoods')
+    .then((response) => response.json())
+    .then((neigh_data) => {
+        neighborhoods.value = neigh_data;
+
+        // 2. Fetch codes
+        return fetch(crime_url.value + '/codes');
+    })
+    .then((response) => response.json())
+    .then((code_data) => {
+        codes.value = code_data;
+
+        // 3. Fetch initial 1000 crimes
+        return fetch(crime_url.value + '/incidents?limit=1000');
+    })
+    .then((response) => response.json())
+    .then((crime_data) => {
+
+        // 4. Enrich each crime record
+        const neighLookup = {};
+        const codeLookup = {};
+
+        // Build lookup from neighborhoods
+        neighborhoods.value.forEach((n) => {
+            neighLookup[n.id] = n.name;
+        });
+
+        // Build lookup from codes
+        codes.value.forEach((c) => {
+            codeLookup[c.code] = c.type;
+        });
+
+        // Add readable names to the crime data
+        crime_data.forEach((c) => {
+            c.neighborhood_name = neighLookup[c.neighborhood_number] || "Unknown";
+            c.incident_type = codeLookup[c.code] || "Unknown";
+        });
+
+        crimes.value = crime_data;
+    })
+    .catch((err) => {
+        console.log(err);
+    });
 }
 
 // Function called when user presses 'OK' on dialog box
@@ -177,6 +229,35 @@ function findLocation() {
     <p class="dialog-error" v-if="location_err">Error: Location not found. Must enter a valid coordinates or address.</p>
     <br/>
     <button class="button" type="button" @click="findLocation">GO</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Case Number</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Incident Type</th>
+                <th>Incident</th>
+                <th>Police Grid</th>
+                <th>Neighborhood Name</th>
+                <th>Block</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr v-for="c in crimes" :key="c.case_number">
+                <td>{{ c.case_number }}</td>
+                <td>{{ c.date }}</td>
+                <td>{{ c.time }}</td>
+                <td>{{ c.incident_type }}</td>
+                <td>{{ c.incident }}</td>
+                <td>{{ c.police_grid }}</td>
+                <td>{{ c.neighborhood_name }}</td>
+                <td>{{ c.block }}</td>
+            </tr>
+        </tbody>
+    </table>
+
 </template>
 
 <style scoped>
