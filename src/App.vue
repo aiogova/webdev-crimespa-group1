@@ -392,8 +392,13 @@ async function applyFilters() {
         if (filters.startDate) params.append('start_date', filters.startDate);
         if (filters.endDate) params.append('end_date', filters.endDate);
 
-        // Max incidents (fix off-by-one)
-        if (filters.maxIncidents) params.append('limit', Number(filters.maxIncidents) + 1);
+        // Max incidents
+        let limit = Number(filters.maxIncidents);
+        if (filters.neighborhoods.length === 0) {
+            // Only add +1 when no neighborhood filter, to fix previous off-by-one issue
+            limit += 1;
+        }
+        params.append('limit', limit);
 
         const url = `${crime_url.value}/incidents?${params.toString()}`;
 
@@ -420,6 +425,7 @@ async function applyFilters() {
         console.error(err);
     }
 }
+
 
 
 
