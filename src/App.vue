@@ -55,7 +55,6 @@ let placeholders = {
   block: "e.g. 123X BLOCK OF SOME ST",
 };
 
-
 let newIncident = ref({
     case_number: '',
     date: '',
@@ -65,12 +64,12 @@ let newIncident = ref({
     police_grid: '',
     neighborhood_number: '',
     block: '',
-    })
+});
 
-    let formError = ref('')
-    let formSuccess = ref('')
+let formError = ref('');
+let formSuccess = ref('');
 
-    async function submitNewIncident() {
+async function submitNewIncident() {
     formError.value = ''
     formSuccess.value = ''
 
@@ -83,7 +82,7 @@ let newIncident = ref({
     }
 
     try {
-        let response = await fetch('http://localhost:8080/new-incident', {
+        let response = await fetch(crime_url.value + '/new-incident', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newIncident.value),
@@ -383,11 +382,16 @@ function findLocation() {
             />
         </div>
 
-        <button @click="submitNewIncident" style="margin-top: 10px;">
+        <button
+            type="button"
+            @click="submitNewIncident"
+            style="margin-top: 10px; padding: 6px 12px; cursor: pointer;"
+            id="submitNewIncidentBtn"
+        >
             Submit Incident
         </button>
-    </div>
 
+    </div>
 
 
     <table>
@@ -448,5 +452,13 @@ function findLocation() {
 .dialog-error {
     font-size: 1rem;
     color: #D32323;
+}
+
+#submitNewIncidentBtn {
+    background-color: rgb(106, 106, 255);
+}
+
+#submitNewIncidentBtn:hover {
+    background-color: blue;
 }
 </style>
