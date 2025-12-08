@@ -5,13 +5,11 @@ let crime_url = ref('');
 let location = ref('');
 let dialog_err = ref(false);
 let location_err = ref(false);
-
 let crimes = ref([]);                // full list of crimes from API
 let visible_crimes = ref([]);        // crimes filtered by map bounds
 let neighborhood_counts = reactive({}); // { neighborhood_name: count }
 let neighborhoods = ref([]);
 let codes = ref([]);
-
 let map = reactive(
     {
         leaflet: null,
@@ -26,23 +24,23 @@ let map = reactive(
             se: {lat: 44.883658, lng: -92.993787}
         },
         neighborhood_markers: [
-            {location: [44.942068, -93.020521], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.977413, -93.025156], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.931244, -93.079578], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.956192, -93.060189], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.978883, -93.068163], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.975766, -93.113887], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.959639, -93.121271], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.947700, -93.128505], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.930276, -93.119911], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.982752, -93.147910], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.963631, -93.167548], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.973971, -93.197965], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.949043, -93.178261], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.934848, -93.176736], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.913106, -93.170779], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.937705, -93.136997], marker: null, neighborhood_id: null, neighborhood_name: null},
-            {location: [44.949203, -93.093739], marker: null, neighborhood_id: null, neighborhood_name: null}
+            {location: [44.942068, -93.020521], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.977413, -93.025156], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.931244, -93.079578], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.956192, -93.060189], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.978883, -93.068163], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.975766, -93.113887], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.959639, -93.121271], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.947700, -93.128505], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.930276, -93.119911], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.982752, -93.147910], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.963631, -93.167548], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.973971, -93.197965], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.949043, -93.178261], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.934848, -93.176736], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.913106, -93.170779], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.937705, -93.136997], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+            {location: [44.949203, -93.093739], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null}
         ]
     }
 );
@@ -148,7 +146,7 @@ function initializeCrimes() {
                 // if the Leaflet marker was already created earlier, update its popup
                 if (markerObj.marker) {
                     // Re-bind popup with a string (safe). This will replace any previous popup.
-                    markerObj.marker.bindPopup(`${n.id}: ${n.name}`);
+                    markerObj.marker.bindPopup(`Id: ${n.id}<br/>Name: ${n.name}`);
                 }
             }
         });
@@ -187,6 +185,32 @@ function initializeCrimes() {
         });
 
         crimes.value = crime_data;
+
+        // -------------------------------------------------------
+        // Count crimes per neighborhood and assign to markers
+        // -------------------------------------------------------
+        const counts = {};
+
+        // Count crimes
+        crime_data.forEach(c => {
+            const id = Number(c.neighborhood_number);
+            counts[id] = (counts[id] || 0) + 1;
+        });
+
+        // Assign counts & update marker popups
+        map.neighborhood_markers.forEach(markerObj => {
+            const id = Number(markerObj.neighborhood_id);
+            const name = markerObj.neighborhood_name;
+
+            const count = counts[id] || 0;
+            markerObj.number_of_crimes = count;
+
+            if (markerObj.marker) {
+                markerObj.marker.bindPopup(
+                    `${name}<br/>Crimes: ${count}`
+                );
+            }
+        });
 
         // Immediately filter to show only visible ones
         filterVisibleCrimes();
