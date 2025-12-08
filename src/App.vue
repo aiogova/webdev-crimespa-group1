@@ -70,6 +70,33 @@ let newIncident = ref({
 let formError = ref('');
 let formSuccess = ref('');
 
+function validateIncident(incident) {
+    // case_number must be digits
+    if (!/^\d+$/.test(incident.case_number)) return "Case number must be numeric";
+
+    // date must match YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(incident.date)) return "Date must be YYYY-MM-DD";
+
+    // time must match HH:MM:SS
+    if (!/^\d{2}:\d{2}:\d{2}$/.test(incident.time)) return "Time must be HH:MM:SS";
+
+    // code must be numeric
+    if (!/^\d+$/.test(incident.code)) return "Code must be numeric";
+
+    // police_grid must be numeric
+    if (!/^\d+$/.test(incident.police_grid)) return "Police grid must be numeric";
+
+    // neighborhood_number must be numeric
+    if (!/^\d+$/.test(incident.neighborhood_number)) return "Neighborhood number must be numeric";
+
+    // incident and block must not be empty
+    if (!incident.incident.trim()) return "Incident description cannot be empty";
+    if (!incident.block.trim()) return "Block cannot be empty";
+
+    return null; // valid
+}
+
+
 async function submitNewIncident() {
     formError.value = ''
     formSuccess.value = ''
@@ -80,6 +107,13 @@ async function submitNewIncident() {
         formError.value = `Please fill out the '${key}' field.`
         return
         }
+    }
+
+    // Validate formats/types
+    const validationError = validateIncident(newIncident.value);
+    if (validationError) {
+        formError.value = validationError;
+        return;
     }
 
     try {
