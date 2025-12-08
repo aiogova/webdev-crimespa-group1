@@ -26,23 +26,23 @@ let map = reactive(
             se: {lat: 44.883658, lng: -92.993787}
         },
         neighborhood_markers: [
-            {location: [44.942068, -93.020521], marker: null},
-            {location: [44.977413, -93.025156], marker: null},
-            {location: [44.931244, -93.079578], marker: null},
-            {location: [44.956192, -93.060189], marker: null},
-            {location: [44.978883, -93.068163], marker: null},
-            {location: [44.975766, -93.113887], marker: null},
-            {location: [44.959639, -93.121271], marker: null},
-            {location: [44.947700, -93.128505], marker: null},
-            {location: [44.930276, -93.119911], marker: null},
-            {location: [44.982752, -93.147910], marker: null},
-            {location: [44.963631, -93.167548], marker: null},
-            {location: [44.973971, -93.197965], marker: null},
-            {location: [44.949043, -93.178261], marker: null},
-            {location: [44.934848, -93.176736], marker: null},
-            {location: [44.913106, -93.170779], marker: null},
-            {location: [44.937705, -93.136997], marker: null},
-            {location: [44.949203, -93.093739], marker: null}
+            {location: [44.942068, -93.020521], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.977413, -93.025156], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.931244, -93.079578], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.956192, -93.060189], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.978883, -93.068163], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.975766, -93.113887], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.959639, -93.121271], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.947700, -93.128505], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.930276, -93.119911], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.982752, -93.147910], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.963631, -93.167548], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.973971, -93.197965], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.949043, -93.178261], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.934848, -93.176736], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.913106, -93.170779], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.937705, -93.136997], marker: null, neighborhood_id: null, neighborhood_name: null},
+            {location: [44.949203, -93.093739], marker: null, neighborhood_id: null, neighborhood_name: null}
         ]
     }
 );
@@ -69,6 +69,12 @@ onMounted(() => {
         result.features.forEach((value) => {
             district_boundary.addData(value);
         });
+
+        // make neighborhood markers visible on map
+        map.neighborhood_markers.forEach((n) => {
+            n.marker = L.marker(n.location).addTo(map.leaflet).bindPopup(n.neighborhood_name);
+        });
+
     })
     .catch((error) => {
         console.log('Error:', error);
@@ -89,6 +95,8 @@ onMounted(() => {
             } else {
                 location.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
             }
+
+            filterVisibleCrimes();
         })
         .catch(error => {
             console.error('Error fetching address:', error);
@@ -99,6 +107,25 @@ onMounted(() => {
 
 
 // FUNCTIONS
+
+function filterVisibleCrimes() {
+    if (!map.leaflet) return; // make sure map exists
+
+    let bounds = map.leaflet.getBounds();
+    let nw = bounds.getNorthWest();
+    let se = bounds.getSouthEast();
+
+    visible_crimes.value = crimes.value.filter(c => {
+        // find marker by neighborhood_id (both coerced to numbers)
+        const markerObj = map.neighborhood_markers.find(
+            m => Number(m.neighborhood_id) === Number(c.neighborhood_number)
+        );
+        if (!markerObj) return false;
+
+        return bounds.contains(L.latLng(markerObj.location[0], markerObj.location[1]));
+    });
+}
+
 // Function called once user has entered REST API URL
 function initializeCrimes() {
     // TODO: get code and neighborhood data
@@ -109,6 +136,22 @@ function initializeCrimes() {
     .then((response) => response.json())
     .then((neigh_data) => {
         neighborhoods.value = neigh_data;
+
+        // NOW we have neighborhoods.value populated — assign id/name to marker objects
+        map.neighborhood_markers.forEach((markerObj, index) => {
+            const n = neighborhoods.value[index];
+            if (n) {
+                // copy id and name to the marker object
+                markerObj.neighborhood_id = n.id;
+                markerObj.neighborhood_name = n.name;
+
+                // if the Leaflet marker was already created earlier, update its popup
+                if (markerObj.marker) {
+                    // Re-bind popup with a string (safe). This will replace any previous popup.
+                    markerObj.marker.bindPopup(`${n.id}: ${n.name}`);
+                }
+            }
+        });
 
         // 2. Fetch codes
         return fetch(crime_url.value + '/codes');
@@ -144,6 +187,9 @@ function initializeCrimes() {
         });
 
         crimes.value = crime_data;
+
+        // Immediately filter to show only visible ones
+        filterVisibleCrimes();
     })
     .catch((err) => {
         console.log(err);
@@ -207,6 +253,7 @@ function findLocation() {
         });
     }
 }
+
 </script>
 
 <template>
@@ -245,7 +292,7 @@ function findLocation() {
         </thead>
 
         <tbody>
-            <tr v-for="c in crimes" :key="c.case_number">
+            <tr v-for="c in visible_crimes" :key="c.case_number">
                 <td>{{ c.case_number }}</td>
                 <td>{{ c.date }}</td>
                 <td>{{ c.time }}</td>
