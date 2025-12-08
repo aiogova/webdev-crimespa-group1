@@ -45,15 +45,23 @@ let map = reactive(
     }
 );
 
+let filters = reactive({
+    neighborhoods: [], // array of selected neighborhood names
+    startDate: '',      // YYYY-MM-DD
+    endDate: '',        // YYYY-MM-DD
+    maxIncidents: 1000, // default max
+});
+
+
 let placeholders = {
-  case_number: "e.g. 12345678",
-  date: "YYYY-MM-DD",
-  time: "HH:MM:SS (e.g. 04:43:00)",
-  code: "Numeric code (e.g. 110)",
-  incident: "Incident description (string)",
-  police_grid: "Grid number (integer, e.g. 82)",
-  neighborhood_number: "Neighborhood ID (integer, e.g. 3)",
-  block: "e.g. 123X BLOCK OF SOME ST",
+    case_number: "e.g. 12345678",
+    date: "YYYY-MM-DD",
+    time: "HH:MM:SS (e.g. 04:43:00)",
+    code: "Numeric code (e.g. 110)",
+    incident: "Incident description (string)",
+    police_grid: "Grid number (integer, e.g. 82)",
+    neighborhood_number: "Neighborhood ID (integer, e.g. 3)",
+    block: "e.g. 123X BLOCK OF SOME ST",
 };
 
 let newIncident = ref({
@@ -371,6 +379,51 @@ function findLocation() {
     }
 }
 
+async function applyFilters() {
+    try {
+        const params = new URLSearchParams();
+
+        // Neighborhoods (use singular 'neighborhood' and IDs)
+        if (filters.neighborhoods.length > 0) {
+            params.append('neighborhood', filters.neighborhoods.join(','));
+        }
+
+        // Date range
+        if (filters.startDate) params.append('start_date', filters.startDate);
+        if (filters.endDate) params.append('end_date', filters.endDate);
+
+        // Max incidents (fix off-by-one)
+        if (filters.maxIncidents) params.append('limit', Number(filters.maxIncidents) + 1);
+
+        const url = `${crime_url.value}/incidents?${params.toString()}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch filtered incidents');
+
+        const data = await response.json();
+
+        // Enrich with neighborhood_name & incident_type
+        const neighLookup = {};
+        neighborhoods.value.forEach(n => { neighLookup[n.id] = n.name; });
+
+        const codeLookup = {};
+        codes.value.forEach(c => { codeLookup[c.code] = c.type; });
+
+        data.forEach(c => {
+            c.neighborhood_name = neighLookup[c.neighborhood_number] || 'Unknown';
+            c.incident_type = codeLookup[c.code] || 'Unknown';
+        });
+
+        crimes.value = data;
+        filterVisibleCrimes();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+
+
+
 </script>
 
 <template>
@@ -422,12 +475,46 @@ function findLocation() {
             type="button"
             @click="submitNewIncident"
             style="margin-top: 10px; padding: 6px 12px; cursor: pointer;"
-            id="submitNewIncidentBtn"
+            class="submitBtn"
         >
             Submit Incident
         </button>
-
     </div>
+
+    <div v-if="urlSubmitted" class="filters">
+        <h2>Filter Crimes</h2>
+
+        <!-- Neighborhoods -->
+        <div>
+            <h3>Neighborhoods</h3>
+            <div v-for="n in neighborhoods" :key="n.id">
+            <label>
+                <input
+                type="checkbox"
+                :value="n.id"
+                v-model="filters.neighborhoods"
+                />
+                {{ n.name }}
+            </label>
+            </div>
+        </div>
+
+        <!-- Date range -->
+        <div>
+            <h3>Date Range</h3>
+            <label>Start Date: <input type="date" v-model="filters.startDate" /></label>
+            <label>End Date: <input type="date" v-model="filters.endDate" /></label>
+        </div>
+
+        <!-- Max incidents -->
+        <div>
+            <h3>Max Incidents</h3>
+            <input type="number" v-model.number="filters.maxIncidents" min="1" />
+        </div>
+
+        <button class="submitBtn" type="button" @click="applyFilters">Update</button>
+    </div>
+
 
 
     <table>
@@ -490,11 +577,11 @@ function findLocation() {
     color: #D32323;
 }
 
-#submitNewIncidentBtn {
+.submitBtn {
     background-color: rgb(106, 106, 255);
 }
 
-#submitNewIncidentBtn:hover {
+.submitBtn:hover {
     background-color: blue;
 }
 </style>
