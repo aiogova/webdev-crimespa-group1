@@ -7,7 +7,6 @@ let dialog_err = ref(false);
 let location_err = ref(false);
 let crimes = ref([]);                // full list of crimes from API
 let visible_crimes = ref([]);        // crimes filtered by map bounds
-let neighborhood_counts = reactive({}); // { neighborhood_name: count }
 let neighborhoods = ref([]);
 let codes = ref([]);
 let map = reactive(
@@ -44,6 +43,65 @@ let map = reactive(
         ]
     }
 );
+
+let placeholders = {
+  case_number: "e.g. 12345678",
+  date: "YYYY-MM-DD",
+  time: "HH:MM:SS (e.g. 04:43:00)",
+  code: "Numeric code (e.g. 110)",
+  incident: "Incident description (string)",
+  police_grid: "Grid number (integer, e.g. 82)",
+  neighborhood_number: "Neighborhood ID (integer, e.g. 3)",
+  block: "e.g. 123X BLOCK OF SOME ST",
+};
+
+
+let newIncident = ref({
+    case_number: '',
+    date: '',
+    time: '',
+    code: '',
+    incident: '',
+    police_grid: '',
+    neighborhood_number: '',
+    block: '',
+    })
+
+    let formError = ref('')
+    let formSuccess = ref('')
+
+    async function submitNewIncident() {
+    formError.value = ''
+    formSuccess.value = ''
+
+    // Require all fields
+    for (let [key, value] of Object.entries(newIncident.value)) {
+        if (!value || value.toString().trim() === '') {
+        formError.value = `Please fill out the '${key}' field.`
+        return
+        }
+    }
+
+    try {
+        let response = await fetch('http://localhost:8080/new-incident', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newIncident.value),
+        })
+
+        if (!response.ok) {
+        throw new Error('Request failed')
+        }
+
+        formSuccess.value = 'Incident uploaded successfully!'
+
+        // Clear the form
+        Object.keys(newIncident.value).forEach(k => (newIncident.value[k] = ''))
+
+    } catch (err) {
+        formError.value = 'Failed to upload incident.'
+    }
+}
 
 // Vue callback for once <template> HTML has been added to web page
 onMounted(() => {
@@ -115,7 +173,7 @@ function filterVisibleCrimes() {
 
     visible_crimes.value = crimes.value.filter(c => {
         // find marker by neighborhood_id (both coerced to numbers)
-        const markerObj = map.neighborhood_markers.find(
+        let markerObj = map.neighborhood_markers.find(
             m => Number(m.neighborhood_id) === Number(c.neighborhood_number)
         );
         if (!markerObj) return false;
@@ -137,7 +195,7 @@ function initializeCrimes() {
 
         // NOW we have neighborhoods.value populated — assign id/name to marker objects
         map.neighborhood_markers.forEach((markerObj, index) => {
-            const n = neighborhoods.value[index];
+            let n = neighborhoods.value[index];
             if (n) {
                 // copy id and name to the marker object
                 markerObj.neighborhood_id = n.id;
@@ -165,8 +223,8 @@ function initializeCrimes() {
     .then((crime_data) => {
 
         // 4. Enrich each crime record
-        const neighLookup = {};
-        const codeLookup = {};
+        let neighLookup = {};
+        let codeLookup = {};
 
         // Build lookup from neighborhoods
         neighborhoods.value.forEach((n) => {
@@ -189,20 +247,20 @@ function initializeCrimes() {
         // -------------------------------------------------------
         // Count crimes per neighborhood and assign to markers
         // -------------------------------------------------------
-        const counts = {};
+        let counts = {};
 
         // Count crimes
         crime_data.forEach(c => {
-            const id = Number(c.neighborhood_number);
+            let id = Number(c.neighborhood_number);
             counts[id] = (counts[id] || 0) + 1;
         });
 
         // Assign counts & update marker popups
         map.neighborhood_markers.forEach(markerObj => {
-            const id = Number(markerObj.neighborhood_id);
-            const name = markerObj.neighborhood_name;
+            let id = Number(markerObj.neighborhood_id);
+            let name = markerObj.neighborhood_name;
 
-            const count = counts[id] || 0;
+            let count = counts[id] || 0;
             markerObj.number_of_crimes = count;
 
             if (markerObj.marker) {
@@ -294,12 +352,43 @@ function findLocation() {
             <div id="leafletmap" class="cell auto"></div>
         </div>
     </div>
+    
     <h1 class="dialog-header">Find Location</h1>
     <label class="dialog-label">Coordinates or Address: </label>
     <input id="dialog-loc" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
     <p class="dialog-error" v-if="location_err">Error: Location not found. Must enter a valid coordinates or address.</p>
     <br/>
     <button class="button" type="button" @click="findLocation">GO</button>
+
+
+    <div class="new-incident-form">
+        <h2>Add New Crime Incident</h2>
+        <p v-if="formError" style="color: red; font-weight: bold;">
+            {{ formError }}
+        </p>
+        <p v-if="formSuccess" style="color: green; font-weight: bold;">
+            {{ formSuccess }}
+        </p>
+
+        <div v-for="(value, key) in newIncident" :key="key" style="margin-bottom: 8px;">
+            <label :for="key" style="font-weight: bold;">
+            {{ key.replace('_', ' ') }}:
+            </label>
+            <input
+            :id="key"
+            v-model="newIncident[key]"
+            :placeholder="placeholders[key]"
+            type="text"
+            style="display: block; width: 250px; padding: 5px;"
+            />
+        </div>
+
+        <button @click="submitNewIncident" style="margin-top: 10px;">
+            Submit Incident
+        </button>
+    </div>
+
+
 
     <table>
         <thead>
