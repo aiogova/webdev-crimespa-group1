@@ -2,6 +2,7 @@
 import { reactive, ref, onMounted } from 'vue'
 
 let crime_url = ref('');
+let urlSubmitted = ref(false);
 let location = ref('');
 let dialog_err = ref(false);
 let location_err = ref(false);
@@ -282,6 +283,7 @@ function closeDialog() {
     let dialog = document.getElementById('rest-dialog');
     let url_input = document.getElementById('dialog-url');
     if (crime_url.value !== '' && url_input.checkValidity()) {
+        urlSubmitted.value = true; // mark that URL has been entered
         dialog_err.value = false;
         dialog.close();
         initializeCrimes();
@@ -360,7 +362,7 @@ function findLocation() {
     <button class="button" type="button" @click="findLocation">GO</button>
 
 
-    <div class="new-incident-form">
+    <div v-if="urlSubmitted" class="new-incident-form">
         <h2>Add New Crime Incident</h2>
         <p v-if="formError" style="color: red; font-weight: bold;">
             {{ formError }}
