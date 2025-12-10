@@ -6,8 +6,8 @@ let urlSubmitted = ref(false);
 let location = ref('');
 let dialog_err = ref(false);
 let location_err = ref(false);
-let crimes = ref([]);                // full list of crimes from API
-let visible_crimes = ref([]);        // crimes filtered by map bounds
+let crimes = ref([]);                
+let visible_crimes = ref([]);        
 let neighborhoods = ref([]);
 let codes = ref([]);
 let map = reactive(
@@ -78,101 +78,6 @@ let newIncident = ref({
 let formError = ref('');
 let formSuccess = ref('');
 
-function validateIncident(incident) {
-    // case_number must be digits
-    if (!/^\d+$/.test(incident.case_number)) return "Case number must be numeric";
-
-    // date must match YYYY-MM-DD
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(incident.date)) return "Date must be YYYY-MM-DD";
-
-    // time must match HH:MM:SS
-    if (!/^\d{2}:\d{2}:\d{2}$/.test(incident.time)) return "Time must be HH:MM:SS";
-
-    // code must be numeric
-    if (!/^\d+$/.test(incident.code)) return "Code must be numeric";
-
-    // police_grid must be numeric
-    if (!/^\d+$/.test(incident.police_grid)) return "Police grid must be numeric";
-
-    // neighborhood_number must be numeric
-    if (!/^\d+$/.test(incident.neighborhood_number)) return "Neighborhood number must be numeric";
-
-    // incident and block must not be empty
-    if (!incident.incident.trim()) return "Incident description cannot be empty";
-    if (!incident.block.trim()) return "Block cannot be empty";
-
-    return null; // valid
-}
-
-
-async function submitNewIncident() {
-    formError.value = ''
-    formSuccess.value = ''
-
-    // Require all fields
-    for (let [key, value] of Object.entries(newIncident.value)) {
-        if (!value || value.toString().trim() === '') {
-        formError.value = `Please fill out the '${key}' field.`
-        return
-        }
-    }
-
-    // Validate formats/types
-    const validationError = validateIncident(newIncident.value);
-    if (validationError) {
-        formError.value = validationError;
-        return;
-    }
-
-    try {
-        let response = await fetch(crime_url.value + '/new-incident', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newIncident.value),
-        })
-
-        if (!response.ok) {
-        throw new Error('Request failed')
-        }
-
-        formSuccess.value = 'Incident uploaded successfully!'
-
-        // Clear the form
-        Object.keys(newIncident.value).forEach(k => (newIncident.value[k] = ''))
-
-    } catch (err) {
-        formError.value = 'Failed to upload incident.'
-    }
-}
-
-async function deleteIncident(caseNumber) {
-    if (!confirm(`Are you sure you want to delete incident #${caseNumber}?`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch(crime_url.value + '/remove-incident', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ case_number: caseNumber })
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to delete incident");
-        }
-
-        alert(`Incident #${caseNumber} deleted successfully.`);
-
-        // Remove from table immediately (without requiring refresh)
-        crimes.value = crimes.value.filter(c => c.case_number !== caseNumber);
-        visible_crimes.value = visible_crimes.value.filter(c => c.case_number !== caseNumber);
-
-    } catch (err) {
-        console.error(err);
-        alert("Error deleting incident.");
-    }
-}
-
 // Vue callback for once <template> HTML has been added to web page
 onMounted(() => {
     // Create Leaflet map (set bounds and valied zoom levels)
@@ -234,6 +139,100 @@ onMounted(() => {
 
 // FUNCTIONS
 
+function validateIncident(incident) {
+    // case_number must be digits
+    if (!/^\d+$/.test(incident.case_number)) return "Case number must be numeric";
+
+    // date must match YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(incident.date)) return "Date must be YYYY-MM-DD";
+
+    // time must match HH:MM:SS
+    if (!/^\d{2}:\d{2}:\d{2}$/.test(incident.time)) return "Time must be HH:MM:SS";
+
+    // code must be numeric
+    if (!/^\d+$/.test(incident.code)) return "Code must be numeric";
+
+    // police_grid must be numeric
+    if (!/^\d+$/.test(incident.police_grid)) return "Police grid must be numeric";
+
+    // neighborhood_number must be numeric
+    if (!/^\d+$/.test(incident.neighborhood_number)) return "Neighborhood number must be numeric";
+
+    // incident and block must not be empty
+    if (!incident.incident.trim()) return "Incident description cannot be empty";
+    if (!incident.block.trim()) return "Block cannot be empty";
+
+    return null; // valid
+}
+
+async function submitNewIncident() {
+    formError.value = ''
+    formSuccess.value = ''
+
+    // require all fields
+    for (let [key, value] of Object.entries(newIncident.value)) {
+        if (!value || value.toString().trim() === '') {
+        formError.value = `Please fill out the '${key}' field.`
+        return
+        }
+    }
+
+    // validate formats/types
+    const validationError = validateIncident(newIncident.value);
+    if (validationError) {
+        formError.value = validationError;
+        return;
+    }
+
+    try {
+        let response = await fetch(crime_url.value + '/new-incident', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newIncident.value),
+        })
+
+        if (!response.ok) {
+        throw new Error('Request failed')
+        }
+
+        formSuccess.value = 'Incident uploaded successfully!'
+
+        // clear the form
+        Object.keys(newIncident.value).forEach(k => (newIncident.value[k] = ''))
+
+    } catch (err) {
+        formError.value = 'Failed to upload incident.'
+    }
+}
+
+async function deleteIncident(caseNumber) {
+    if (!confirm(`Are you sure you want to delete incident #${caseNumber}?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(crime_url.value + '/remove-incident', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ case_number: caseNumber })
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to delete incident");
+        }
+
+        alert(`Incident #${caseNumber} deleted successfully.`);
+
+        // remove from table immediately (without requiring refresh)
+        crimes.value = crimes.value.filter(c => c.case_number !== caseNumber);
+        visible_crimes.value = visible_crimes.value.filter(c => c.case_number !== caseNumber);
+
+    } catch (err) {
+        console.error(err);
+        alert("Error deleting incident.");
+    }
+}
+
 function filterVisibleCrimes() {
     if (!map.leaflet) return; // make sure map exists
 
@@ -242,7 +241,7 @@ function filterVisibleCrimes() {
     let se = bounds.getSouthEast();
 
     visible_crimes.value = crimes.value.filter(c => {
-        // find marker by neighborhood_id (both coerced to numbers)
+        // find marker by neighborhood_id (both converted to numbers)
         let markerObj = map.neighborhood_markers.find(
             m => Number(m.neighborhood_id) === Number(c.neighborhood_number)
         );
@@ -257,13 +256,13 @@ function initializeCrimes() {
     // TODO: get code and neighborhood data
     //       get initial 1000 crimes
 
-     // 1. Fetch neighborhoods
+     // fetch neighborhoods
     fetch(crime_url.value + '/neighborhoods')
     .then((response) => response.json())
     .then((neigh_data) => {
         neighborhoods.value = neigh_data;
 
-        // NOW we have neighborhoods.value populated — assign id/name to marker objects
+        // once we have neighborhoods.value populated, assign id/name to marker objects
         map.neighborhood_markers.forEach((markerObj, index) => {
             let n = neighborhoods.value[index];
             if (n) {
@@ -273,40 +272,40 @@ function initializeCrimes() {
 
                 // if the Leaflet marker was already created earlier, update its popup
                 if (markerObj.marker) {
-                    // Re-bind popup with a string (safe). This will replace any previous popup.
+                    // re-bind popup with a string (safe). This will replace any previous popup
                     markerObj.marker.bindPopup(`Id: ${n.id}<br/>Name: ${n.name}`);
                 }
             }
         });
 
-        // 2. Fetch codes
+        // fetch codes
         return fetch(crime_url.value + '/codes');
     })
     .then((response) => response.json())
     .then((code_data) => {
         codes.value = code_data;
 
-        // 3. Fetch initial 1000 crimes
+        // fetch initial 1000 crimes
         return fetch(crime_url.value + '/incidents?limit=1000');
     })
     .then((response) => response.json())
     .then((crime_data) => {
 
-        // 4. Enrich each crime record
+        // update each crime record
         let neighLookup = {};
         let codeLookup = {};
 
-        // Build lookup from neighborhoods
+        // build lookup from neighborhoods
         neighborhoods.value.forEach((n) => {
             neighLookup[n.id] = n.name;
         });
 
-        // Build lookup from codes
+        // build lookup from codes
         codes.value.forEach((c) => {
             codeLookup[c.code] = c.type;
         });
 
-        // Add readable names to the crime data
+        // add readable names to the crime data
         crime_data.forEach((c) => {
             c.neighborhood_name = neighLookup[c.neighborhood_number] || "Unknown";
             c.incident_type = codeLookup[c.code] || "Unknown";
@@ -314,18 +313,17 @@ function initializeCrimes() {
 
         crimes.value = crime_data;
 
-        // -------------------------------------------------------
-        // Count crimes per neighborhood and assign to markers
-        // -------------------------------------------------------
+        
+        // count crimes per neighborhood and assign to markers ------------------------
         let counts = {};
 
-        // Count crimes
+        // count crimes
         crime_data.forEach(c => {
             let id = Number(c.neighborhood_number);
             counts[id] = (counts[id] || 0) + 1;
         });
 
-        // Assign counts & update marker popups
+        // assign counts & update marker popups
         map.neighborhood_markers.forEach(markerObj => {
             let id = Number(markerObj.neighborhood_id);
             let name = markerObj.neighborhood_name;
@@ -340,7 +338,7 @@ function initializeCrimes() {
             }
         });
 
-        // Immediately filter to show only visible ones
+        // immediately filter to show only visible ones
         filterVisibleCrimes();
     })
     .catch((err) => {
@@ -411,19 +409,19 @@ async function applyFilters() {
     try {
         const params = new URLSearchParams();
 
-        // Neighborhoods (use singular 'neighborhood' and IDs)
+        // neighborhoods (use singular 'neighborhood' and IDs)
         if (filters.neighborhoods.length > 0) {
             params.append('neighborhood', filters.neighborhoods.join(','));
         }
 
-        // Date range
+        // date range
         if (filters.startDate) params.append('start_date', filters.startDate);
         if (filters.endDate) params.append('end_date', filters.endDate);
 
-        // Max incidents
+        // max incidents
         let limit = Number(filters.maxIncidents);
         if (filters.neighborhoods.length === 0) {
-            // Only add +1 when no neighborhood filter, to fix previous off-by-one issue
+            // only add +1 when no neighborhood filter, to fix off-by-one issue
             limit += 1;
         }
         params.append('limit', limit);
@@ -435,7 +433,7 @@ async function applyFilters() {
 
         const data = await response.json();
 
-        // Enrich with neighborhood_name & incident_type
+        // add neighborhood_name & incident_type to each crime
         const neighLookup = {};
         neighborhoods.value.forEach(n => { neighLookup[n.id] = n.name; });
 
@@ -482,7 +480,7 @@ async function applyFilters() {
     <br/>
     <button class="button" type="button" @click="findLocation">GO</button>
 
-
+    <!-- New Incident Form -->
     <div v-if="urlSubmitted" class="new-incident-form">
         <h2>Add New Crime Incident</h2>
         <p v-if="formError" style="color: red; font-weight: bold;">
@@ -505,19 +503,14 @@ async function applyFilters() {
             />
         </div>
 
-        <button
-            type="button"
-            @click="submitNewIncident"
-            style="margin-top: 10px; padding: 6px 12px; cursor: pointer;"
-            class="submitBtn"
-        >
+        <button type="button" @click="submitNewIncident" style="margin-top: 10px; padding: 6px 12px;" class="submitBtn">
             Submit Incident
         </button>
     </div>
 
+    <!-- Filters -->
     <div v-if="urlSubmitted" class="filters">
         <h2>Filter Crimes</h2>
-
         <!-- Neighborhoods -->
         <div>
             <h3>Neighborhoods</h3>
@@ -577,7 +570,6 @@ async function applyFilters() {
                 <td>{{ c.neighborhood_name }}</td>
                 <td>{{ c.block }}</td>
                 <td><button @click="deleteIncident(c.case_number)" class="deleteBtn">Delete</button></td>
-
             </tr>
         </tbody>
     </table>
@@ -614,6 +606,10 @@ async function applyFilters() {
     color: #D32323;
 }
 
+button {
+    cursor: pointer;
+}
+
 .submitBtn {
     background-color: rgb(106, 106, 255);
 }
@@ -628,6 +624,5 @@ async function applyFilters() {
 
 .deleteBtn:hover {
     background-color: blue;
-    cursor: pointer;
 }
 </style>
