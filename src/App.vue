@@ -195,6 +195,9 @@ async function submitNewIncident() {
 
         formSuccess.value = 'Incident uploaded successfully!'
 
+        // re-fetch incidents so the UI updates
+        await applyFilters();
+
         // clear the form
         Object.keys(newIncident.value).forEach(k => (newIncident.value[k] = ''))
 
@@ -224,6 +227,8 @@ async function deleteIncident(caseNumber) {
         // remove from table immediately (without requiring refresh)
         crimes.value = crimes.value.filter(c => c.case_number !== caseNumber);
         visible_crimes.value = visible_crimes.value.filter(c => c.case_number !== caseNumber);
+
+        updateMarkerCounts();
 
     } catch (err) {
         console.error(err);
