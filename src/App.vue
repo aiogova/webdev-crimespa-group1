@@ -351,31 +351,6 @@ function initializeCrimes() {
 
         crimes.value = crime_data;
 
-        
-        // count crimes per neighborhood and assign to markers ------------------------
-        /*let counts = {};
-
-        // count crimes
-        crime_data.forEach(c => {
-            let id = Number(c.neighborhood_number);
-            counts[id] = (counts[id] || 0) + 1;
-        });
-
-        // assign counts & update marker popups
-        map.neighborhood_markers.forEach(markerObj => {
-            let id = Number(markerObj.neighborhood_id);
-            let name = markerObj.neighborhood_name;
-
-            let count = counts[id] || 0;
-            markerObj.number_of_crimes = count;
-
-            if (markerObj.marker) {
-                markerObj.marker.bindPopup(
-                    `${name}<br/>Crimes: ${count}`
-                );
-            }
-        });*/
-
         updateMarkerCounts();
 
         // immediately filter to show only visible ones
