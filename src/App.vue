@@ -145,6 +145,34 @@ async function submitNewIncident() {
     }
 }
 
+async function deleteIncident(caseNumber) {
+    if (!confirm(`Are you sure you want to delete incident #${caseNumber}?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(crime_url.value + '/remove-incident', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ case_number: caseNumber })
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to delete incident");
+        }
+
+        alert(`Incident #${caseNumber} deleted successfully.`);
+
+        // Remove from table immediately (without requiring refresh)
+        crimes.value = crimes.value.filter(c => c.case_number !== caseNumber);
+        visible_crimes.value = visible_crimes.value.filter(c => c.case_number !== caseNumber);
+
+    } catch (err) {
+        console.error(err);
+        alert("Error deleting incident.");
+    }
+}
+
 // Vue callback for once <template> HTML has been added to web page
 onMounted(() => {
     // Create Leaflet map (set bounds and valied zoom levels)
@@ -523,7 +551,7 @@ async function applyFilters() {
 
 
 
-    <table>
+    <table v-if="urlSubmitted">
         <thead>
             <tr>
                 <th>Case Number</th>
@@ -534,6 +562,7 @@ async function applyFilters() {
                 <th>Police Grid</th>
                 <th>Neighborhood Name</th>
                 <th>Block</th>
+                <th>Delete</th>
             </tr>
         </thead>
 
@@ -547,6 +576,8 @@ async function applyFilters() {
                 <td>{{ c.police_grid }}</td>
                 <td>{{ c.neighborhood_name }}</td>
                 <td>{{ c.block }}</td>
+                <td><button @click="deleteIncident(c.case_number)" class="deleteBtn">Delete</button></td>
+
             </tr>
         </tbody>
     </table>
@@ -589,5 +620,14 @@ async function applyFilters() {
 
 .submitBtn:hover {
     background-color: blue;
+}
+
+.deleteBtn {
+    background-color: rgb(106, 106, 255);
+}
+
+.deleteBtn:hover {
+    background-color: blue;
+    cursor: pointer;
 }
 </style>
