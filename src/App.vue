@@ -103,7 +103,7 @@ onMounted(() => {
 
         // make neighborhood markers visible on map
         map.neighborhood_markers.forEach((n) => {
-            n.marker = L.marker(n.location).addTo(map.leaflet).bindPopup(n.neighborhood_name);
+            n.marker = L.marker(n.location).addTo(map.leaflet);
         });
 
     })
@@ -136,9 +136,7 @@ onMounted(() => {
     });
 });
 
-
 // FUNCTIONS
-
 function validateIncident(incident) {
     // case_number must be digits
     if (!/^\d+$/.test(incident.case_number)) return "Case number must be numeric";
