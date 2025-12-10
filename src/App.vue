@@ -251,6 +251,41 @@ function filterVisibleCrimes() {
     });
 }
 
+function updateMarkerCounts() {
+    // Build counts per neighborhood_number from *current* crimes.value
+    const counts = {};
+    crimes.value.forEach(c => {
+        const id = String(c.neighborhood_number);
+        counts[id] = (counts[id] || 0) + 1;
+    });
+
+    // Build a lookup for neighborhood id → name
+    const nameLookup = {};
+    neighborhoods.value.forEach(n => {
+        nameLookup[String(n.id)] = n.name;
+    });
+
+    // Update each neighborhood marker
+    map.neighborhood_markers.forEach(m => {
+        const nid = m.neighborhood_id != null ? String(m.neighborhood_id) : null;
+        const count = nid && counts[nid] ? counts[nid] : 0;
+
+        // Update the stored count
+        m.number_of_crimes = count;
+
+        // Update popup text if popup already exists
+        const popupName =
+            m.neighborhood_name ||
+            (nid && nameLookup[nid]) ||
+            "Unknown Neighborhood";
+
+        if (m.marker) {
+            m.marker.bindPopup(`${popupName}<br>Crimes: ${count}`);
+        }
+    });
+}
+
+
 // Function called once user has entered REST API URL
 function initializeCrimes() {
     // TODO: get code and neighborhood data
@@ -315,7 +350,7 @@ function initializeCrimes() {
 
         
         // count crimes per neighborhood and assign to markers ------------------------
-        let counts = {};
+        /*let counts = {};
 
         // count crimes
         crime_data.forEach(c => {
@@ -336,7 +371,9 @@ function initializeCrimes() {
                     `${name}<br/>Crimes: ${count}`
                 );
             }
-        });
+        });*/
+
+        updateMarkerCounts();
 
         // immediately filter to show only visible ones
         filterVisibleCrimes();
@@ -446,6 +483,7 @@ async function applyFilters() {
         });
 
         crimes.value = data;
+        updateMarkerCounts();
         filterVisibleCrimes();
     } catch (err) {
         console.error(err);
