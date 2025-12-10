@@ -257,7 +257,7 @@ function updateMarkerCounts() {
         counts[id] = (counts[id] || 0) + 1;
     });
 
-    // Build a lookup for neighborhood id → name
+    // Build a lookup for neighborhood id to name
     const nameLookup = {};
     neighborhoods.value.forEach(n => {
         nameLookup[String(n.id)] = n.name;
@@ -496,124 +496,128 @@ async function applyFilters() {
 </script>
 
 <template>
-    <dialog id="rest-dialog" open>
-        <h1 class="dialog-header">St. Paul Crime REST API</h1>
-        <label class="dialog-label">URL: </label>
-        <input id="dialog-url" class="dialog-input" type="url" v-model="crime_url" placeholder="http://localhost:8000" />
-        <p class="dialog-error" v-if="dialog_err">Error: must enter valid URL</p>
+    <div id="appContainer">
+        <dialog id="rest-dialog" open>
+            <h1 class="dialog-header">St. Paul Crime REST API</h1>
+            <label class="dialog-label">URL: </label>
+            <input id="dialog-url" class="dialog-input" type="url" v-model="crime_url" placeholder="http://localhost:8000" />
+            <p class="dialog-error" v-if="dialog_err">Error: must enter valid URL</p>
+            <br/>
+            <button class="button" type="button" @click="closeDialog">OK</button>
+        </dialog>
+
+        <h1 id="pageTitle">St. Paul Crime SPA</h1>
+
+        <div class="grid-container ">
+            <div class="grid-x grid-padding-x">
+                <div id="leafletmap" class="cell auto"></div>
+            </div>
+        </div>
+        
+        <div id="findLocation">
+        <h1 class="dialog-header">Find Location</h1>
+        <label class="dialog-label">Coordinates or Address: </label>
+        <input id="dialog-loc" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
+        <p class="dialog-error" v-if="location_err">Error: Location not found. Must enter a valid coordinates or address.</p>
         <br/>
-        <button class="button" type="button" @click="closeDialog">OK</button>
-    </dialog>
-    <div class="grid-container ">
-        <div class="grid-x grid-padding-x">
-            <div id="leafletmap" class="cell auto"></div>
-        </div>
-    </div>
-    
-    <div id="findLocation">
-    <h1 class="dialog-header">Find Location</h1>
-    <label class="dialog-label">Coordinates or Address: </label>
-    <input id="dialog-loc" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
-    <p class="dialog-error" v-if="location_err">Error: Location not found. Must enter a valid coordinates or address.</p>
-    <br/>
-    <button class="button" type="button" @click="findLocation">GO</button>
-    </div>
-
-    <div class="grid-x grid-margin-x">
-        <!-- New Incident Form -->
-        <div v-if="urlSubmitted" class="new-incident-form cell small-12 medium-6">
-            <h2>Add New Crime Incident</h2>
-            <p v-if="formError" style="color: red; font-weight: bold;">
-                {{ formError }}
-            </p>
-            <p v-if="formSuccess" style="color: green; font-weight: bold;">
-                {{ formSuccess }}
-            </p>
-
-            <div v-for="(value, key) in newIncident" :key="key" style="margin-bottom: 8px;">
-                <label :for="key" style="font-weight: bold;">
-                {{ key.replace('_', ' ') }}:
-                </label>
-                <input
-                :id="key"
-                v-model="newIncident[key]"
-                :placeholder="placeholders[key]"
-                type="text"
-                style="display: block; width: 250px; padding: 5px;"
-                />
-            </div>
-
-            <button type="button" @click="submitNewIncident" style="margin-top: 10px; padding: 6px 12px;" class="submitBtn">
-                Submit Incident
-            </button>
+        <button class="button" type="button" @click="findLocation">GO</button>
         </div>
 
-        <!-- Filters -->
-        <div v-if="urlSubmitted" class="filters cell small-12 medium-6">
-            <h2>Filter Crimes</h2>
-            <!-- Neighborhoods -->
-            <div>
-                <h3>Neighborhoods</h3>
-                <div v-for="n in neighborhoods" :key="n.id">
-                <label>
+        <div class="grid-x grid-margin-x">
+            <!-- New Incident Form -->
+            <div v-if="urlSubmitted" class="new-incident-form cell small-12 medium-6">
+                <h2>Add New Crime Incident</h2>
+                <p v-if="formError" style="color: red; font-weight: bold;">
+                    {{ formError }}
+                </p>
+                <p v-if="formSuccess" style="color: green; font-weight: bold;">
+                    {{ formSuccess }}
+                </p>
+
+                <div v-for="(value, key) in newIncident" :key="key" style="margin-bottom: 8px;">
+                    <label :for="key" style="font-weight: bold;">
+                    {{ key.replace('_', ' ') }}:
+                    </label>
                     <input
-                    type="checkbox"
-                    :value="n.id"
-                    v-model="filters.neighborhoods"
+                    :id="key"
+                    v-model="newIncident[key]"
+                    :placeholder="placeholders[key]"
+                    type="text"
+                    style="display: block; padding: 5px;"
                     />
-                    {{ n.name }}
-                </label>
                 </div>
+
+                <button type="button" @click="submitNewIncident" style="margin-top: 10px; padding: 6px 12px;" class="submitBtn">
+                    Submit Incident
+                </button>
             </div>
 
-            <!-- Date range -->
-            <div>
-                <h3>Date Range</h3>
-                <label>Start Date: <input type="date" v-model="filters.startDate" /></label>
-                <label>End Date: <input type="date" v-model="filters.endDate" /></label>
-            </div>
+            <!-- Filters -->
+            <div v-if="urlSubmitted" class="filters cell small-12 medium-6">
+                <h2>Filter Crimes</h2>
+                <!-- Neighborhoods -->
+                <div>
+                    <h3>Neighborhoods</h3>
+                    <div v-for="n in neighborhoods" :key="n.id">
+                    <label>
+                        <input
+                        type="checkbox"
+                        :value="n.id"
+                        v-model="filters.neighborhoods"
+                        />
+                        {{ n.name }}
+                    </label>
+                    </div>
+                </div>
 
-            <!-- Max incidents -->
-            <div>
-                <h3>Max Incidents</h3>
-                <input type="number" v-model.number="filters.maxIncidents" min="1" />
-            </div>
+                <!-- Date range -->
+                <div>
+                    <h3>Date Range</h3>
+                    <label>Start Date: <input type="date" v-model="filters.startDate" /></label>
+                    <label>End Date: <input type="date" v-model="filters.endDate" /></label>
+                </div>
 
-            <button class="submitBtn" type="button" @click="applyFilters">Update</button>
+                <!-- Max incidents -->
+                <div>
+                    <h3>Max Incidents</h3>
+                    <input type="number" v-model.number="filters.maxIncidents" min="1" />
+                </div>
+
+                <button class="submitBtn" type="button" @click="applyFilters">Update</button>
+            </div>
         </div>
+
+
+        <table v-if="urlSubmitted">
+            <thead>
+                <tr>
+                    <th>Case Number</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Incident Type</th>
+                    <th>Incident</th>
+                    <th>Police Grid</th>
+                    <th>Neighborhood Name</th>
+                    <th>Block</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr v-for="c in visible_crimes" :key="c.case_number">
+                    <td>{{ c.case_number }}</td>
+                    <td>{{ c.date }}</td>
+                    <td>{{ c.time }}</td>
+                    <td>{{ c.incident_type }}</td>
+                    <td>{{ c.incident }}</td>
+                    <td>{{ c.police_grid }}</td>
+                    <td>{{ c.neighborhood_name }}</td>
+                    <td>{{ c.block }}</td>
+                    <td><button @click="deleteIncident(c.case_number)" class="deleteBtn">Delete</button></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-
-
-    <table v-if="urlSubmitted">
-        <thead>
-            <tr>
-                <th>Case Number</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Incident Type</th>
-                <th>Incident</th>
-                <th>Police Grid</th>
-                <th>Neighborhood Name</th>
-                <th>Block</th>
-                <th>Delete</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            <tr v-for="c in visible_crimes" :key="c.case_number">
-                <td>{{ c.case_number }}</td>
-                <td>{{ c.date }}</td>
-                <td>{{ c.time }}</td>
-                <td>{{ c.incident_type }}</td>
-                <td>{{ c.incident }}</td>
-                <td>{{ c.police_grid }}</td>
-                <td>{{ c.neighborhood_name }}</td>
-                <td>{{ c.block }}</td>
-                <td><button @click="deleteIncident(c.case_number)" class="deleteBtn">Delete</button></td>
-            </tr>
-        </tbody>
-    </table>
-
 </template>
 
 <style scoped>
@@ -633,7 +637,7 @@ async function applyFilters() {
 
 
 .dialog-header {
-    font-size: 1.2rem;
+    font-size: 2rem;
     font-weight: bold;
 }
 
@@ -670,6 +674,13 @@ button {
 .deleteBtn:hover {
     background-color: blue;
 }
+
+#appContainer {
+    background-color: #1e1e1e; /* dark smokey background */
+    min-height: 100vh;          /* ensures it fills the viewport */
+    padding: 1rem;
+}
+
 
 #findLocation {
     max-width: 1000px;             /* keeps the section a reasonable width */
@@ -747,6 +758,14 @@ button {
     border-radius: 6px;
     border: 1px solid #ccc;
     margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.new-incident-form input {
+    width: 100%;         /* full width of parent container */
+    box-sizing: border-box; /* includes padding in width */
+    padding: 0.5rem;      /* comfortable padding */
+    margin-bottom: 0.8rem; /* spacing between fields */
     font-size: 1rem;
 }
 
@@ -876,6 +895,40 @@ tbody tr:nth-child(even) {
 
 tbody tr:hover {
     background-color: #e6e6ff; /* highlight on hover */
+}
+
+#pageTitle {
+    text-align: center;               /* centers the title */
+    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* modern, clean font */
+    font-size: 2.5rem;                /* big, bold title */
+    font-weight: 700;
+    color: #f0f0f0;            /* light text */
+    margin: 2rem 0 1rem 0;            /* space above and below */
+    letter-spacing: 1px;              /* slight spacing between letters */
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+#findLocation,
+.new-incident-form,
+.filters {
+    font-size: 1.1rem; /* slightly bigger for better readability */
+}
+
+#findLocation label,
+.new-incident-form label,
+.filters label {
+    font-size: 1.2rem; /* labels bigger too */
+    font-weight: 600;  /* bold labels for clarity */
+}
+
+#findLocation input,
+.new-incident-form input,
+.filters input {
+    font-size: 1rem; /* input text readable */
+}
+
+.new-incident-form, .filters, #findLocation, #leafletmap, table {
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.201); /* darker shadow for contrast on dark bg */
 }
 
 
