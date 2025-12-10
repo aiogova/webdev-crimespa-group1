@@ -388,6 +388,11 @@ function closeDialog() {
     let dialog = document.getElementById('rest-dialog');
     let url_input = document.getElementById('dialog-url');
     if (crime_url.value !== '' && url_input.checkValidity()) {
+        // normalize URL: remove trailing slash if present
+        if (crime_url.value.endsWith('/')) {
+            crime_url.value = crime_url.value.slice(0, -1);
+        }
+
         urlSubmitted.value = true; // mark that URL has been entered
         dialog_err.value = false;
         dialog.close();
@@ -489,10 +494,6 @@ async function applyFilters() {
         console.error(err);
     }
 }
-
-
-
-
 
 </script>
 
@@ -843,12 +844,6 @@ button {
     background-color: #ff0000;
     transform: scale(1.05);  /* slight pop on hover */
 }
-
-
-
-
-
-
 
 table {
     width: 100%;
