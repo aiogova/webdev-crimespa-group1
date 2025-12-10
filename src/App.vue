@@ -511,75 +511,78 @@ async function applyFilters() {
         </div>
     </div>
     
+    <div id="findLocation">
     <h1 class="dialog-header">Find Location</h1>
     <label class="dialog-label">Coordinates or Address: </label>
     <input id="dialog-loc" class="dialog-input" type="location" v-model="location" placeholder="893 Aldine St." />
     <p class="dialog-error" v-if="location_err">Error: Location not found. Must enter a valid coordinates or address.</p>
     <br/>
     <button class="button" type="button" @click="findLocation">GO</button>
-
-    <!-- New Incident Form -->
-    <div v-if="urlSubmitted" class="new-incident-form">
-        <h2>Add New Crime Incident</h2>
-        <p v-if="formError" style="color: red; font-weight: bold;">
-            {{ formError }}
-        </p>
-        <p v-if="formSuccess" style="color: green; font-weight: bold;">
-            {{ formSuccess }}
-        </p>
-
-        <div v-for="(value, key) in newIncident" :key="key" style="margin-bottom: 8px;">
-            <label :for="key" style="font-weight: bold;">
-            {{ key.replace('_', ' ') }}:
-            </label>
-            <input
-            :id="key"
-            v-model="newIncident[key]"
-            :placeholder="placeholders[key]"
-            type="text"
-            style="display: block; width: 250px; padding: 5px;"
-            />
-        </div>
-
-        <button type="button" @click="submitNewIncident" style="margin-top: 10px; padding: 6px 12px;" class="submitBtn">
-            Submit Incident
-        </button>
     </div>
 
-    <!-- Filters -->
-    <div v-if="urlSubmitted" class="filters">
-        <h2>Filter Crimes</h2>
-        <!-- Neighborhoods -->
-        <div>
-            <h3>Neighborhoods</h3>
-            <div v-for="n in neighborhoods" :key="n.id">
-            <label>
+    <div class="grid-x grid-margin-x">
+        <!-- New Incident Form -->
+        <div v-if="urlSubmitted" class="new-incident-form cell small-12 medium-6">
+            <h2>Add New Crime Incident</h2>
+            <p v-if="formError" style="color: red; font-weight: bold;">
+                {{ formError }}
+            </p>
+            <p v-if="formSuccess" style="color: green; font-weight: bold;">
+                {{ formSuccess }}
+            </p>
+
+            <div v-for="(value, key) in newIncident" :key="key" style="margin-bottom: 8px;">
+                <label :for="key" style="font-weight: bold;">
+                {{ key.replace('_', ' ') }}:
+                </label>
                 <input
-                type="checkbox"
-                :value="n.id"
-                v-model="filters.neighborhoods"
+                :id="key"
+                v-model="newIncident[key]"
+                :placeholder="placeholders[key]"
+                type="text"
+                style="display: block; width: 250px; padding: 5px;"
                 />
-                {{ n.name }}
-            </label>
             </div>
+
+            <button type="button" @click="submitNewIncident" style="margin-top: 10px; padding: 6px 12px;" class="submitBtn">
+                Submit Incident
+            </button>
         </div>
 
-        <!-- Date range -->
-        <div>
-            <h3>Date Range</h3>
-            <label>Start Date: <input type="date" v-model="filters.startDate" /></label>
-            <label>End Date: <input type="date" v-model="filters.endDate" /></label>
-        </div>
+        <!-- Filters -->
+        <div v-if="urlSubmitted" class="filters cell small-12 medium-6">
+            <h2>Filter Crimes</h2>
+            <!-- Neighborhoods -->
+            <div>
+                <h3>Neighborhoods</h3>
+                <div v-for="n in neighborhoods" :key="n.id">
+                <label>
+                    <input
+                    type="checkbox"
+                    :value="n.id"
+                    v-model="filters.neighborhoods"
+                    />
+                    {{ n.name }}
+                </label>
+                </div>
+            </div>
 
-        <!-- Max incidents -->
-        <div>
-            <h3>Max Incidents</h3>
-            <input type="number" v-model.number="filters.maxIncidents" min="1" />
-        </div>
+            <!-- Date range -->
+            <div>
+                <h3>Date Range</h3>
+                <label>Start Date: <input type="date" v-model="filters.startDate" /></label>
+                <label>End Date: <input type="date" v-model="filters.endDate" /></label>
+            </div>
 
-        <button class="submitBtn" type="button" @click="applyFilters">Update</button>
+            <!-- Max incidents -->
+            <div>
+                <h3>Max Incidents</h3>
+                <input type="number" v-model.number="filters.maxIncidents" min="1" />
+            </div>
+
+            <button class="submitBtn" type="button" @click="applyFilters">Update</button>
+        </div>
     </div>
-
 
 
     <table v-if="urlSubmitted">
@@ -622,8 +625,13 @@ async function applyFilters() {
 }
 
 #leafletmap {
-    height: 500px;
+    width: 100%;
+    height: 500px; /* fixed height so map always shows */
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 2rem;
 }
+
 
 .dialog-header {
     font-size: 1.2rem;
@@ -663,4 +671,219 @@ button {
 .deleteBtn:hover {
     background-color: blue;
 }
+
+#findLocation {
+    max-width: 1000px;             /* keeps the section a reasonable width */
+    margin: 2rem auto;            /* centers horizontally and adds vertical spacing */
+    padding: 1.5rem;              /* space inside the box */
+    background-color: #fff;       /* white background to pop off the page */
+    border-radius: 10px;          /* rounded corners */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* subtle drop shadow */
+    text-align: center;           /* center the content inside */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* nicer font */
+}
+
+#findLocation label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+#findLocation input {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+#findLocation button {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #6a6aff;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#findLocation button:hover {
+    background-color: #3d3dff;
+}
+
+.new-incident-form {
+    max-width: 600px;                /* reasonable width */
+    margin: 2rem auto;                /* centers horizontally, adds spacing above/below */
+    padding: 1.5rem 2rem;             /* space inside */
+    background-color: #fff;           /* white background */
+    border-radius: 10px;              /* rounded corners */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* subtle drop shadow */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* modern font */
+}
+
+.new-incident-form h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.new-incident-form p {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.new-incident-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.new-incident-form input {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.new-incident-form .submitBtn {
+    display: block;
+    margin: 1rem auto 0 auto; /* centers the button */
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #6a6aff;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.new-incident-form .submitBtn:hover {
+    background-color: #3d3dff;
+}
+
+.filters {
+    max-width: 600px;                /* keep consistent width */
+    margin: 2rem auto;                /* center horizontally with vertical spacing */
+    padding: 1.5rem 2rem;             /* inside spacing */
+    background-color: #fff;           /* white background */
+    border-radius: 10px;              /* rounded corners */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* subtle drop shadow */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* modern font */
+}
+
+.filters h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.filters h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.filters label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.filters input[type="number"],
+.filters input[type="date"] {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.filters input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.filters .submitBtn {
+    display: block;
+    margin: 1rem auto 0 auto; /* center button */
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #6a6aff;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.filters .submitBtn:hover {
+    background-color: #3d3dff;
+}
+
+.deleteBtn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #ff5c5c;  /* red for delete */
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.deleteBtn:hover {
+    background-color: #ff0000;
+    transform: scale(1.05);  /* slight pop on hover */
+}
+
+
+
+
+
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-radius: 10px;
+    overflow: hidden; /* rounds the corners */
+}
+
+thead {
+    background-color: #6a6aff;
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+}
+
+thead th {
+    padding: 0.8rem 1rem;
+}
+
+tbody td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9; /* subtle zebra striping */
+}
+
+tbody tr:hover {
+    background-color: #e6e6ff; /* highlight on hover */
+}
+
+
 </style>
