@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 
 let crime_url = ref('');
 let urlSubmitted = ref(false);
@@ -47,10 +47,37 @@ let map = reactive(
 
 let filters = reactive({
     neighborhoods: [], // array of selected neighborhood names
+    incident_types: [], // array of selected incident type names
     startDate: '',      // YYYY-MM-DD
     endDate: '',        // YYYY-MM-DD
     maxIncidents: 1000, // default max
 });
+
+let incidentTypeGroups = computed(() => {
+    const groups = {};
+    codes.value.forEach(c => {
+        const codeNum = parseInt(c.code);
+        let typeName = c.type || "Unknown";
+        
+        // "first string before the first comma"
+        if (typeName.includes(',')) {
+            typeName = typeName.split(',')[0];
+        }
+        typeName = typeName.trim();
+        
+        if (!groups[typeName]) {
+            groups[typeName] = [];
+        }
+        groups[typeName].push(codeNum);
+    });
+    
+    // Return sorted keys alphabetically
+    return Object.keys(groups).sort().reduce((obj, key) => {
+        obj[key] = groups[key];
+        return obj;
+    }, {});
+});
+
 
 
 let placeholders = {
@@ -434,6 +461,19 @@ async function applyFilters() {
             params.append('neighborhood', filters.neighborhoods.join(','));
         }
 
+        // incident types
+        if (filters.incident_types && filters.incident_types.length > 0) {
+            let selectedCodes = [];
+            filters.incident_types.forEach(type => {
+                if (incidentTypeGroups.value[type]) {
+                    selectedCodes.push(...incidentTypeGroups.value[type]);
+                }
+            });
+            if (selectedCodes.length > 0) {
+                params.append('code', selectedCodes.join(','));
+            }
+        }
+
         // date range
         if (filters.startDate) params.append('start_date', filters.startDate);
         if (filters.endDate) params.append('end_date', filters.endDate);
@@ -547,6 +587,23 @@ async function applyFilters() {
                         />
                         {{ n.name }}
                     </label>
+                    </div>
+                </div>
+
+                <!-- Incident Types -->
+                <div>
+                    <h3>Incident Types</h3>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; border-radius: 6px;">
+                        <div v-for="(codes, type) in incidentTypeGroups" :key="type">
+                            <label>
+                                <input
+                                type="checkbox"
+                                :value="type"
+                                v-model="filters.incident_types"
+                                />
+                                {{ type }}
+                            </label>
+                        </div>
                     </div>
                 </div>
 
