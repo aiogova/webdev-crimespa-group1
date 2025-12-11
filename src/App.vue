@@ -59,19 +59,19 @@ let incidentTypeGroups = computed(() => {
     codes.value.forEach(c => {
         const codeNum = parseInt(c.code);
         let typeName = c.type || "Unknown";
-        
+       
         // "first string before the first comma"
         if (typeName.includes(',')) {
             typeName = typeName.split(',')[0];
         }
         typeName = typeName.trim();
-        
+       
         if (!groups[typeName]) {
             groups[typeName] = [];
         }
         groups[typeName].push(codeNum);
     });
-    
+   
     // Return sorted keys alphabetically
     return Object.keys(groups).sort().reduce((obj, key) => {
         obj[key] = groups[key];
@@ -267,16 +267,16 @@ async function deleteIncident(caseNumber) {
 function getCrimeCategory(type) {
     if (!type) return 'other-crime';
     const lowerType = type.toLowerCase();
-    
+   
     // Violent crimes: Crimes against another person
     const violentKeywords = ['assault', 'homicide', 'rape', 'robbery', 'murder', 'domestic', 'battery', 'person', 'abduction', 'kidnapping', 'sex', 'trafficking'];
-    
+   
     // Property crimes: Crimes against property
     const propertyKeywords = ['theft', 'burglary', 'arson', 'damage', 'vandalism', 'stolen', 'shoplifting', 'property', 'vehicle', 'fraud', 'embezzlement', 'forgery'];
-    
+   
     if (violentKeywords.some(k => lowerType.includes(k))) return 'violent-crime';
     if (propertyKeywords.some(k => lowerType.includes(k))) return 'property-crime';
-    
+   
     // Other crimes: Anything else
     return 'other-crime';
 }
@@ -298,11 +298,11 @@ function selectCrime(crime) {
 
     // Clean address
     let address = cleanAddress(crime.block);
-    
+   
     // Use Nominatim to geocode
     // Restrict to St Paul area for better results
     const viewbox = `${map.bounds.nw.lng},${map.bounds.nw.lat},${map.bounds.se.lng},${map.bounds.se.lat}`;
-    
+   
     fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ", St. Paul, MN")}&format=json&viewbox=${viewbox}&bounded=1`)
     .then(response => response.json())
     .then(data => {
@@ -632,7 +632,7 @@ async function applyFilters() {
                 <div id="leafletmap" class="cell auto"></div>
             </div>
         </div>
-        
+       
         <div id="findLocation">
         <h1 class="dialog-header">Find Location</h1>
         <label class="dialog-label">Coordinates or Address: </label>
@@ -759,9 +759,9 @@ async function applyFilters() {
                 </thead>
 
                 <tbody>
-                    <tr 
-                        v-for="c in visible_crimes" 
-                        :key="c.case_number" 
+                    <tr
+                        v-for="c in visible_crimes"
+                        :key="c.case_number"
                         :class="getCrimeCategory(c.incident_type)"
                         @click="selectCrime(c)"
                         style="cursor: pointer;"
