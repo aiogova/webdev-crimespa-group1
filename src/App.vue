@@ -290,6 +290,12 @@ function cleanAddress(address) {
 function selectCrime(crime) {
     if (!map.leaflet) return;
 
+    // Scroll map into view
+    const mapElement = document.getElementById('leafletmap');
+    if (mapElement) {
+        mapElement.scrollIntoView({ behavior: 'smooth' });
+    }
+
     // Clean address
     let address = cleanAddress(crime.block);
     
