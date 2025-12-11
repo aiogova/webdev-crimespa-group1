@@ -14,6 +14,7 @@ let map = reactive(
     {
         leaflet: null,
         selected_marker: null,
+        selected_case_number: null,
         center: {
             lat: 44.955139,
             lng: -93.102222,
@@ -234,6 +235,44 @@ async function submitNewIncident() {
     }
 }
 
+function toggleMapZoom(enable) {
+    if (!map.leaflet) return;
+    if (enable) {
+        map.leaflet.touchZoom.enable();
+        map.leaflet.doubleClickZoom.enable();
+        map.leaflet.scrollWheelZoom.enable();
+        map.leaflet.boxZoom.enable();
+        map.leaflet.keyboard.enable();
+        if (map.leaflet.zoomControl) map.leaflet.zoomControl.enable();
+    } else {
+        map.leaflet.touchZoom.disable();
+        map.leaflet.doubleClickZoom.disable();
+        map.leaflet.scrollWheelZoom.disable();
+        map.leaflet.boxZoom.disable();
+        map.leaflet.keyboard.disable();
+        if (map.leaflet.zoomControl) map.leaflet.zoomControl.disable();
+    }
+}
+
+function toggleMapZoom(enable) {
+    if (!map.leaflet) return;
+    if (enable) {
+        map.leaflet.touchZoom.enable();
+        map.leaflet.doubleClickZoom.enable();
+        map.leaflet.scrollWheelZoom.enable();
+        map.leaflet.boxZoom.enable();
+        map.leaflet.keyboard.enable();
+        if (map.leaflet.zoomControl) map.leaflet.zoomControl.enable();
+    } else {
+        map.leaflet.touchZoom.disable();
+        map.leaflet.doubleClickZoom.disable();
+        map.leaflet.scrollWheelZoom.disable();
+        map.leaflet.boxZoom.disable();
+        map.leaflet.keyboard.disable();
+        if (map.leaflet.zoomControl) map.leaflet.zoomControl.disable();
+    }
+}
+
 async function deleteIncident(caseNumber) {
     if (!confirm(`Are you sure you want to delete incident #${caseNumber}?`)) {
         return;
@@ -255,6 +294,16 @@ async function deleteIncident(caseNumber) {
         // remove from table immediately (without requiring refresh)
         crimes.value = crimes.value.filter(c => c.case_number !== caseNumber);
         visible_crimes.value = visible_crimes.value.filter(c => c.case_number !== caseNumber);
+
+        // If the deleted crime was the selected one, clear marker and enable zoom
+        if (map.selected_case_number === caseNumber) {
+            if (map.selected_marker) {
+                map.leaflet.removeLayer(map.selected_marker);
+                map.selected_marker = null;
+            }
+            map.selected_case_number = null;
+            toggleMapZoom(true);
+        }
 
         updateMarkerCounts();
 
@@ -316,6 +365,10 @@ function selectCrime(crime) {
                 map.leaflet.removeLayer(map.selected_marker);
             }
 
+            // Set selected case number and disable zoom
+            map.selected_case_number = crime.case_number;
+            toggleMapZoom(false);
+
             // Create new red marker
             const redIcon = new L.Icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -341,11 +394,6 @@ function selectCrime(crime) {
             const btn = popupDiv.querySelector('.popup-delete');
             btn.addEventListener('click', () => {
                 deleteIncident(crime.case_number);
-                // Close popup after delete? The row will disappear, so maybe remove marker too?
-                if (map.selected_marker) {
-                    map.leaflet.removeLayer(map.selected_marker);
-                    map.selected_marker = null;
-                }
             });
 
             map.selected_marker.bindPopup(popupDiv).openPopup();
