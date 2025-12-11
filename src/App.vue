@@ -235,44 +235,6 @@ async function submitNewIncident() {
     }
 }
 
-function toggleMapZoom(enable) {
-    if (!map.leaflet) return;
-    if (enable) {
-        map.leaflet.touchZoom.enable();
-        map.leaflet.doubleClickZoom.enable();
-        map.leaflet.scrollWheelZoom.enable();
-        map.leaflet.boxZoom.enable();
-        map.leaflet.keyboard.enable();
-        if (map.leaflet.zoomControl) map.leaflet.zoomControl.enable();
-    } else {
-        map.leaflet.touchZoom.disable();
-        map.leaflet.doubleClickZoom.disable();
-        map.leaflet.scrollWheelZoom.disable();
-        map.leaflet.boxZoom.disable();
-        map.leaflet.keyboard.disable();
-        if (map.leaflet.zoomControl) map.leaflet.zoomControl.disable();
-    }
-}
-
-function toggleMapZoom(enable) {
-    if (!map.leaflet) return;
-    if (enable) {
-        map.leaflet.touchZoom.enable();
-        map.leaflet.doubleClickZoom.enable();
-        map.leaflet.scrollWheelZoom.enable();
-        map.leaflet.boxZoom.enable();
-        map.leaflet.keyboard.enable();
-        if (map.leaflet.zoomControl) map.leaflet.zoomControl.enable();
-    } else {
-        map.leaflet.touchZoom.disable();
-        map.leaflet.doubleClickZoom.disable();
-        map.leaflet.scrollWheelZoom.disable();
-        map.leaflet.boxZoom.disable();
-        map.leaflet.keyboard.disable();
-        if (map.leaflet.zoomControl) map.leaflet.zoomControl.disable();
-    }
-}
-
 async function deleteIncident(caseNumber) {
     if (!confirm(`Are you sure you want to delete incident #${caseNumber}?`)) {
         return;
