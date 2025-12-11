@@ -1137,3 +1137,31 @@ tbody tr.property-crime:hover { background-color: #c3e6cb; }
 tbody tr.other-crime:hover { background-color: #ffeeba; }
 
 </style>
+
+<style>
+/* Global styles for Leaflet popups */
+.popup-delete {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #ff5c5c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.popup-delete:hover {
+    background-color: #ff0000;
+    transform: translateY(-1px);
+}
+
+.popup-delete:active {
+    transform: translateY(0);
+}
+</style>
