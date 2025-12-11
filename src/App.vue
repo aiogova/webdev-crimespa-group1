@@ -13,6 +13,7 @@ let codes = ref([]);
 let map = reactive(
     {
         leaflet: null,
+        selected_marker: null,
         center: {
             lat: 44.955139,
             lng: -93.102222,
@@ -261,6 +262,98 @@ async function deleteIncident(caseNumber) {
         console.error(err);
         alert("Error deleting incident.");
     }
+}
+
+function getCrimeCategory(type) {
+    if (!type) return 'other-crime';
+    const lowerType = type.toLowerCase();
+    
+    // Violent crimes: Crimes against another person
+    const violentKeywords = ['assault', 'homicide', 'rape', 'robbery', 'murder', 'domestic', 'battery', 'person', 'abduction', 'kidnapping', 'sex', 'trafficking'];
+    
+    // Property crimes: Crimes against property
+    const propertyKeywords = ['theft', 'burglary', 'arson', 'damage', 'vandalism', 'stolen', 'shoplifting', 'property', 'vehicle', 'fraud', 'embezzlement', 'forgery'];
+    
+    if (violentKeywords.some(k => lowerType.includes(k))) return 'violent-crime';
+    if (propertyKeywords.some(k => lowerType.includes(k))) return 'property-crime';
+    
+    // Other crimes: Anything else
+    return 'other-crime';
+}
+
+function cleanAddress(address) {
+    // Replace 'X' in address numbers with '0'
+    // Look for digits followed by X, e.g. "12X " -> "120 "
+    return address.replace(/(\d+)X(?=\s)/g, '$10');
+}
+
+function selectCrime(crime) {
+    if (!map.leaflet) return;
+
+    // Clean address
+    let address = cleanAddress(crime.block);
+    
+    // Use Nominatim to geocode
+    // Restrict to St Paul area for better results
+    const viewbox = `${map.bounds.nw.lng},${map.bounds.nw.lat},${map.bounds.se.lng},${map.bounds.se.lat}`;
+    
+    fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ", St. Paul, MN")}&format=json&viewbox=${viewbox}&bounded=1`)
+    .then(response => response.json())
+    .then(data => {
+        if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+            const latLng = [lat, lng];
+
+            // Remove existing selected marker
+            if (map.selected_marker) {
+                map.leaflet.removeLayer(map.selected_marker);
+            }
+
+            // Create new red marker
+            const redIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            map.selected_marker = L.marker(latLng, { icon: redIcon }).addTo(map.leaflet);
+
+            // Create popup content with delete button
+            const popupDiv = document.createElement('div');
+            popupDiv.innerHTML = `
+                <p><strong>Date:</strong> ${crime.date}</p>
+                <p><strong>Time:</strong> ${crime.time}</p>
+                <p><strong>Incident:</strong> ${crime.incident}</p>
+                <button class="deleteBtn popup-delete">Delete</button>
+            `;
+
+            // Add event listener to the button
+            const btn = popupDiv.querySelector('.popup-delete');
+            btn.addEventListener('click', () => {
+                deleteIncident(crime.case_number);
+                // Close popup after delete? The row will disappear, so maybe remove marker too?
+                if (map.selected_marker) {
+                    map.leaflet.removeLayer(map.selected_marker);
+                    map.selected_marker = null;
+                }
+            });
+
+            map.selected_marker.bindPopup(popupDiv).openPopup();
+
+            // Pan map to location
+            map.leaflet.setView(latLng, 16);
+        } else {
+            console.log("Could not find location for address:", address);
+            alert("Could not locate this address on the map.");
+        }
+    })
+    .catch(err => {
+        console.error("Geocoding error:", err);
+    });
 }
 
 function filterVisibleCrimes() {
@@ -625,35 +718,61 @@ async function applyFilters() {
         </div>
 
 
-        <table v-if="urlSubmitted">
-            <thead>
-                <tr>
-                    <th>Case Number</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Incident Type</th>
-                    <th>Incident</th>
-                    <th>Police Grid</th>
-                    <th>Neighborhood Name</th>
-                    <th>Block</th>
-                    <th>Delete</th>
-                </tr>
-            </thead>
+        <div v-if="urlSubmitted">
+            <div class="legend-container">
+                <h3>Crime Category Legend</h3>
+                <div class="legend-content">
+                    <div class="legend-item">
+                        <span class="color-box violent"></span>
+                        <span>Violent Crimes (Against Person)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box property"></span>
+                        <span>Property Crimes (Against Property)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box other"></span>
+                        <span>Other Crimes</span>
+                    </div>
+                </div>
+            </div>
 
-            <tbody>
-                <tr v-for="c in visible_crimes" :key="c.case_number">
-                    <td>{{ c.case_number }}</td>
-                    <td>{{ c.date }}</td>
-                    <td>{{ c.time }}</td>
-                    <td>{{ c.incident_type }}</td>
-                    <td>{{ c.incident }}</td>
-                    <td>{{ c.police_grid }}</td>
-                    <td>{{ c.neighborhood_name }}</td>
-                    <td>{{ c.block }}</td>
-                    <td><button @click="deleteIncident(c.case_number)" class="deleteBtn">Delete</button></td>
-                </tr>
-            </tbody>
-        </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Case Number</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Incident Type</th>
+                        <th>Incident</th>
+                        <th>Police Grid</th>
+                        <th>Neighborhood Name</th>
+                        <th>Block</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr 
+                        v-for="c in visible_crimes" 
+                        :key="c.case_number" 
+                        :class="getCrimeCategory(c.incident_type)"
+                        @click="selectCrime(c)"
+                        style="cursor: pointer;"
+                    >
+                        <td>{{ c.case_number }}</td>
+                        <td>{{ c.date }}</td>
+                        <td>{{ c.time }}</td>
+                        <td>{{ c.incident_type }}</td>
+                        <td>{{ c.incident }}</td>
+                        <td>{{ c.police_grid }}</td>
+                        <td>{{ c.neighborhood_name }}</td>
+                        <td>{{ c.block }}</td>
+                        <td><button @click.stop="deleteIncident(c.case_number)" class="deleteBtn">Delete</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </template>
 
@@ -945,12 +1064,6 @@ tbody tr:hover {
     text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.1);
 }
 
-#findLocation,
-.new-incident-form,
-.filters {
-    font-size: 1.1rem; /* slightly bigger for better readability */
-}
-
 #findLocation label,
 .new-incident-form label,
 .filters label {
@@ -968,5 +1081,59 @@ tbody tr:hover {
     box-shadow: 0 4px 20px rgba(255, 255, 255, 0.201); /* darker shadow for contrast on dark bg */
 }
 
+.legend-container {
+    max-width: 800px;
+    margin: 2rem auto 1rem auto;
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.legend-container h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.legend-content {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.color-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    display: inline-block;
+}
+
+.color-box.violent { background-color: #f8d7da; }
+.color-box.property { background-color: #d4edda; }
+.color-box.other { background-color: #fff3cd; }
+
+/* Table Row Coloring */
+/* Override the nth-child styling for colored rows, but keep hover effect */
+tbody tr.violent-crime { background-color: #f8d7da; }
+tbody tr.property-crime { background-color: #d4edda; }
+tbody tr.other-crime { background-color: #fff3cd; }
+
+/* Ensure hover state is visible */
+tbody tr.violent-crime:hover { background-color: #f5c6cb; }
+tbody tr.property-crime:hover { background-color: #c3e6cb; }
+tbody tr.other-crime:hover { background-color: #ffeeba; }
 
 </style>
