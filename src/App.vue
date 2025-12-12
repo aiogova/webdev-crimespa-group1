@@ -10,41 +10,40 @@ let crimes = ref([]);
 let visible_crimes = ref([]);        
 let neighborhoods = ref([]);
 let codes = ref([]);
-let map = reactive(
-    {
-        leaflet: null,
-        selected_marker: null,
-        center: {
-            lat: 44.955139,
-            lng: -93.102222,
-            address: ''
-        },
-        zoom: 12,
-        bounds: {
-            nw: {lat: 45.008206, lng: -93.217977},
-            se: {lat: 44.883658, lng: -92.993787}
-        },
-        neighborhood_markers: [
-            {location: [44.942068, -93.020521], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.977413, -93.025156], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.931244, -93.079578], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.956192, -93.060189], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.978883, -93.068163], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.975766, -93.113887], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.959639, -93.121271], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.947700, -93.128505], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.930276, -93.119911], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.982752, -93.147910], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.963631, -93.167548], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.973971, -93.197965], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.949043, -93.178261], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.934848, -93.176736], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.913106, -93.170779], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.937705, -93.136997], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
-            {location: [44.949203, -93.093739], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null}
-        ]
-    }
-);
+let map = {
+    leaflet: null,
+    selected_marker: null,
+    selected_markers: [],
+    center: {
+        lat: 44.955139,
+        lng: -93.102222,
+        address: ''
+    },
+    zoom: 12,
+    bounds: {
+        nw: {lat: 45.008206, lng: -93.217977},
+        se: {lat: 44.883658, lng: -92.993787}
+    },
+    neighborhood_markers: [
+        {location: [44.942068, -93.020521], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.977413, -93.025156], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.931244, -93.079578], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.956192, -93.060189], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.978883, -93.068163], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.975766, -93.113887], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.959639, -93.121271], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.947700, -93.128505], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.930276, -93.119911], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.982752, -93.147910], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.963631, -93.167548], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.973971, -93.197965], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.949043, -93.178261], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.934848, -93.176736], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.913106, -93.170779], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.937705, -93.136997], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null},
+        {location: [44.949203, -93.093739], marker: null, neighborhood_id: null, neighborhood_name: null, number_of_crimes: null}
+    ]
+};
 
 let filters = reactive({
     neighborhoods: [], // array of selected neighborhood names
@@ -312,9 +311,9 @@ function selectCrime(crime) {
             const latLng = [lat, lng];
 
             // Remove existing selected marker
-            if (map.selected_marker) {
+            /*if (map.selected_marker) {
                 map.leaflet.removeLayer(map.selected_marker);
-            }
+            }*/
 
             // Create new red marker
             const redIcon = new L.Icon({
@@ -326,7 +325,12 @@ function selectCrime(crime) {
                 shadowSize: [41, 41]
             });
 
-            map.selected_marker = L.marker(latLng, { icon: redIcon }).addTo(map.leaflet);
+            //map.selected_marker = L.marker(latLng, { icon: redIcon }).addTo(map.leaflet);
+            const marker = L.marker(latLng, { icon: redIcon }).addTo(map.leaflet);
+
+            // Store it in the array of active selected markers
+            map.selected_markers.push(marker);
+
 
             // Create popup content with delete button
             const popupDiv = document.createElement('div');
@@ -339,15 +343,22 @@ function selectCrime(crime) {
 
             // Add event listener to the button
             const btn = popupDiv.querySelector('.popup-delete');
-            btn.addEventListener('click', () => {
+            /*btn.addEventListener('click', () => {
                 // remove the marker from the map
                 if (map.selected_marker) {
                     map.leaflet.removeLayer(map.selected_marker);
                     map.selected_marker = null;
                 }
+            });*/
+            btn.addEventListener('click', () => {
+                // remove the marker from the map
+                map.leaflet.removeLayer(marker);
+                map.selected_markers = map.selected_markers.filter(m => m !== marker);
             });
 
-            map.selected_marker.bindPopup(popupDiv).openPopup();
+
+            //map.selected_marker.bindPopup(popupDiv).openPopup();
+            marker.bindPopup(popupDiv).openPopup();
 
             // Pan map to location
             map.leaflet.setView(latLng, 16);
