@@ -334,14 +334,13 @@ function selectCrime(crime) {
                 <p><strong>Date:</strong> ${crime.date}</p>
                 <p><strong>Time:</strong> ${crime.time}</p>
                 <p><strong>Incident:</strong> ${crime.incident}</p>
-                <button class="deleteBtn popup-delete">Delete</button>
+                <button class="deleteBtn popup-delete">Remove Marker</button>
             `;
 
             // Add event listener to the button
             const btn = popupDiv.querySelector('.popup-delete');
             btn.addEventListener('click', () => {
-                deleteIncident(crime.case_number);
-                // Close popup after delete? The row will disappear, so maybe remove marker too?
+                // remove the marker from the map
                 if (map.selected_marker) {
                     map.leaflet.removeLayer(map.selected_marker);
                     map.selected_marker = null;
@@ -615,6 +614,8 @@ async function applyFilters() {
 </script>
 
 <template>
+    <!-- Nav bar -->
+     
     <div id="appContainer">
         <dialog id="rest-dialog" open>
             <h1 class="dialog-header">St. Paul Crime REST API</h1>
