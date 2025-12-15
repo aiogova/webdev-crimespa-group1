@@ -588,12 +588,9 @@ async function applyFilters() {
         if (filters.endDate) params.append('end_date', filters.endDate);
 
         // max incidents
-        let limit = Number(filters.maxIncidents);
-        if (filters.neighborhoods.length === 0) {
-            // only add +1 when no neighborhood filter, to fix off-by-one issue
-            limit += 1;
-        }
+        const limit = Number(filters.maxIncidents);
         params.append('limit', limit);
+
 
         const url = `${crime_url.value}/incidents?${params.toString()}`;
 
